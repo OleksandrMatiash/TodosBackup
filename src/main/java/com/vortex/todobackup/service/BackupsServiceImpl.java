@@ -2,7 +2,6 @@ package com.vortex.todobackup.service;
 
 import com.vortex.todobackup.domain.BackupEntity;
 import com.vortex.todobackup.domain.BackupStatus;
-import com.vortex.todobackup.domain.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +15,8 @@ import java.util.function.Supplier;
 @Service
 public class BackupsServiceImpl implements BackupsService {
 
-    private static final ScheduledExecutorService schedulerExecutor = Executors.newScheduledThreadPool(4);
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(4);
+    private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(4);
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(4);
     private static final int TIMEOUT_MILLIS = 2000;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -51,14 +50,14 @@ public class BackupsServiceImpl implements BackupsService {
 
     private <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier) {
         final CompletableFuture<T> cf = new CompletableFuture<T>();
-        Future<?> future = executorService.submit(() -> {
+        Future<?> future = EXECUTOR_SERVICE.submit(() -> {
             try {
                 cf.complete(supplier.get());
             } catch (Throwable ex) {
                 cf.completeExceptionally(ex);
             }
         });
-        schedulerExecutor.schedule(() -> {
+        SCHEDULER_EXECUTOR.schedule(() -> {
             if (!cf.isDone()) {
                 cf.completeExceptionally(new TimeoutException());
                 future.cancel(true);
